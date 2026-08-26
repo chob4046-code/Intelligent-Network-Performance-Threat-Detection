@@ -1,0 +1,5 @@
+async function send(url,options={}){const r=await fetch(url,{headers:{'Content-Type':'application/json'},...options});if(!r.ok){let e='Request failed';try{e=(await r.json()).error||e}catch(_){ }throw new Error(e)}return r.json()}
+document.querySelector('#target-form')?.addEventListener('submit',async e=>{e.preventDefault();const body=Object.fromEntries(new FormData(e.currentTarget));try{await send('/targets',{method:'POST',body:JSON.stringify(body)});location.reload()}catch(x){alert(x.message)}});
+document.querySelectorAll('.delete').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Delete this target and its history?'))return;try{await send('/targets/'+b.dataset.id,{method:'DELETE'});location.reload()}catch(x){alert(x.message)}}));
+document.querySelectorAll('.ack').forEach(b=>b.addEventListener('click',async()=>{try{await send('/alerts/'+b.dataset.id+'/ack',{method:'POST'});location.reload()}catch(x){alert(x.message)}}));
+setTimeout(()=>location.reload(),30000);
