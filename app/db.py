@@ -26,8 +26,11 @@ def connect(path):
 def init_db(path, username, password):
     with connect(path) as db:
         db.executescript(SCHEMA)
-        if not db.execute('SELECT 1 FROM users WHERE username=?', (username,)).fetchone():
+        row = db.execute('SELECT id, password_hash FROM users WHERE username=?', (username,)).fetchone()
+        if row is None:
             db.execute('INSERT INTO users(username,password_hash) VALUES (?,?)', (username, hash_password(password)))
+        elif not row['password_hash']:
+            db.execute('UPDATE users SET password_hash=? WHERE id=?', (hash_password(password), row['id']))
 
 
 def get_user(path, username):
