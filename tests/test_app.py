@@ -1,11 +1,11 @@
-import os,tempfile
+import os, tempfile
 import pytest
 from app import create_app
 from app.monitor import check_tcp
 
 @pytest.fixture
 def client():
-    fd,path=tempfile.mkstemp(suffix='.db');os.close(fd)
+    fd,path=tempfile.mkstemp(suffix='.db'); os.close(fd)
     app=create_app({'TESTING':True,'DB_PATH':path,'ADMIN_PASSWORD':'TestPassword!123','ADMIN_USERNAME':'admin','SECRET_KEY':'test-secret'})
     with app.test_client() as c: yield c
     os.unlink(path)
@@ -24,9 +24,12 @@ def test_api_requires_login(client):
     assert client.get('/api/overview').status_code==401
 
 def test_create_target(client):
-    login(client);r=client.post('/targets',json={'name':'Local','host':'127.0.0.1','port':5000})
+    assert login(client).status_code==302
+    r=client.post('/targets',json={'name':'Local','host':'127.0.0.1','port':5000})
     assert r.status_code==201
-    assert b'Local' in client.get('/api/overview').data
+    assert r.is_json
+    data=client.get('/api/overview').get_json()
+    assert any(t['name']=='Local' for t in data['targets'])
 
 def test_tcp_invalid_port():
     status,latency,error=check_tcp('127.0.0.1',0,0.1)
